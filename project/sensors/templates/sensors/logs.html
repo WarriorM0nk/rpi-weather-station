@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Logs{% endblock %}
+
+{% block content %}
+<div class="table-container">
+<table class="table is-bordered is-fullwidth">
+    <thead>
+        <tr class="is-success custom-thead">
+            <th>Time</th>
+            <th>Rain</th>
+            <th>Light</th>
+            <th>Humidity</th>
+            <th>Temperature</th>
+        </tr>
+    </thead>
+    {% for d in data %}
+    <tbody>
+        <tr>
+            <td>{{ d.timestamp }}</td>
+            <td>{{ d.rain|floatformat:2 }}</td>
+            <td>{{ d.light|floatformat:2 }}</td>
+            <td>{{ d.humidity }}</td>
+            <td>{{ d.temperature }}</td>
+        </tr>
+    </tbody>
+    {% endfor %}
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+@startuml communication
+participant Sensors
+
+box "Raspberry Pi" #LightSalmon
+participant Sensor_Data_Reader
+participant MQTT_Publisher
+participant MQTT_Broker
+end box
+
+box "PC/Laptop" #LightBlue
+participant MQTT_Subscriber
+database SensorDB
+participant Web_Application
+end box
+
+actor User
+
+MQTT_Publisher->MQTT_Broker: Send request to \nestablish connection
+
+alt success 
+    MQTT_Broker->MQTT_Publisher: Send response \nconnection established
+else failure
+    MQTT_Broker->MQTT_Publisher: Send response \nconnection not established
+end
+
+MQTT_Subscriber->MQTT_Broker: Send request to \nestablish connection
+
+alt success 
+    MQTT_Broker->MQTT_Subscriber: Send response \nconnection established
+    loop indefinitely
+    MQTT_Subscriber->MQTT_Broker: Listens for response
+    end
+else failure
+    MQTT_Broker->MQTT_Subscriber: Send response \nconnection not established
+end
+
+loop indefinitely
+    Sensors->Sensor_Data_Reader: Sends data 
+    activate Sensor_Data_Reader
+    Sensor_Data_Reader->Sensor_Data_Reader: Normalize data
+    Sensor_Data_Reader->MQTT_Publisher: Send normalized data
+    deactivate Sensor_Data_Reader
+
+    activate MQTT_Publisher
+    MQTT_Publisher->MQTT_Publisher: Jsonify data
+    MQTT_Publisher->MQTT_Broker: Send data
+    deactivate MQTT_Publisher
+
+    MQTT_Broker->MQTT_Subscriber: Send data
+    MQTT_Subscriber->SensorDB: Store data
+end
+
+User->Web_Application: Refresh page
+activate Web_Application
+Web_Application->SensorDB: Send request to \nfetch data
+activate SensorDB
+SensorDB->SensorDB: fetches data
+SensorDB->Web_Application: Send response
+deactivate SensorDB
+Web_Application->User: Display data
+@enduml

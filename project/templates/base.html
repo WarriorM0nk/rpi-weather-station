@@ -1,0 +1,44 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>{% block title %}{% endblock %}</title>
+
+    <style>
+        html, body {
+            scrollbar-width: none;
+        }
+
+        .custom-content {
+            max-width: 95%;
+            max-height: 95%;
+        }
+
+        .custom-thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .table-container {
+            max-height: 750px; /* Adjust based on your needs */
+            overflow-y: auto;  /* Enables vertical scrolling */
+            scrollbar-width: none;
+        }
+
+    </style>
+</head>
+<body class="">
+    <nav class="navbar is-success">
+        <a href="{% url 'sensors:index' %}" class="navbar-item">Sensors</a>
+        <a href="{% url 'sensors:logs' %}" class="navbar-item">Logs</a>
+    </nav>
+
+    <div id="content" class="m-5 custom-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

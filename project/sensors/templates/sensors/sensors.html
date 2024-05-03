@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Sensors{% endblock %}
+
+{% block content %}
+<div class="is-flex">
+    <div class="column">
+        <canvas id="rainChart"></canvas>
+    </div>
+    <div class="column">
+        <canvas id="lightChart"></canvas>
+    </div>
+</div>
+<div class="is-flex">
+    <div class="column">
+        <canvas id="humidityChart"></canvas>
+    </div>
+    <div class="column">
+        <canvas id="temperatureChart"></canvas>
+    </div>
+</div>
+
+<script>
+const addChart = (chartCanvasName, xLabel, yLabel, sensorData, colorOne, colorTwo) => {
+    var ctx = document.getElementById(chartCanvasName).getContext('2d');
+    var sensorChart = new Chart(ctx, {
+        type: 'line',  // Change to 'bar' if preferred
+        data: {
+            labels: xLabel,
+            datasets: [
+                {
+                    label: yLabel,
+                    data: sensorData,
+                    backgroundColor: colorOne,
+                    borderColor: colorTwo,
+                    borderWidth: 1,
+                    pointStyle: false,
+                    tension: 0.3
+                },
+                // Add other datasets similarly if needed
+            ]
+        },
+        options: {
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                    }
+                }]
+            }
+        }
+    });
+
+    return ctx
+}
+
+addChart('rainChart', 
+    {{ data.labels|safe }}, 
+    'Rain', 
+    {{ data.rain|safe }}, 
+    'rgba(0, 100, 255, 0.2)',
+    'rgba(0, 100, 255, 1)',
+)
+
+addChart('lightChart', 
+    {{ data.labels|safe }}, 
+    'Light', 
+    {{ data.light|safe }}, 
+    'rgba(255, 255, 0, 0.2)',
+    'rgba(255, 255, 0, 1)',
+)
+
+addChart('humidityChart', 
+    {{ data.labels|safe }}, 
+    'Humidity', 
+    {{ data.humidity|safe }}, 
+    'rgba(0, 255, 132, 0.2)',
+    'rgba(0, 255, 132, 1)',
+)
+
+addChart('temperatureChart', 
+    {{ data.labels|safe }}, 
+    'Temperature', 
+    {{ data.temperature|safe }}, 
+    'rgba(255, 99, 132, 0.2)',
+    'rgba(255, 99, 132, 1)',
+)
+</script>
+
+{% endblock %}
