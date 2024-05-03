@@ -1,5 +1,5 @@
 # Raspberry Pi 5 Weather Station
-## Table of Contents
+# Table of Contents
 - [Overview](#overview)
 - [Requirements](#requirements)
     - [Hardware](#hardware)
@@ -19,14 +19,14 @@
         - [Database](#database)
 
 
-## Overview
+# Overview
 The Raspberry Pi Weather Station is a project that utilizes sensors as well as communication protocols to gather weather data and send across a network. It is split into 3 main segments, namely: the sensors, the MQTT service and the web application.
 
 What follows is a description of the 3 segments as well as their implementation and usage instructions
 
-## Requirements
+# Requirements
 Below is a list of hardware and software used and their usage in the project.
-### Hardware
+## Hardware
 | Name | Usage |
 | ---- | ----- |
 | DHT11 Sensor | Used to collect temperature and humidity data |
@@ -36,7 +36,7 @@ Below is a list of hardware and software used and their usage in the project.
 | MCP3008 ADC | Used to convert the analog readings of the DHT11 and LDR Photosensitive sensors to digital |
 | Raspberry Pi 5 | Used to receive converted analog sensor readings and normalize them. Also used to host the MQTT broker and act as the MQTT publisher |
 
-### Software
+## Software
 | Name | Usage |
 | ---- | ----- |
 | gpiozero Library | Used to get the LDR Photosensitive and Raindrop sensors readings |
@@ -46,8 +46,8 @@ Below is a list of hardware and software used and their usage in the project.
 | Django Web Framework | Used to run a web application that displays the data in graphs |
 | ChartsJS Library | Used to make charts that represent the data received |
 
-## Design
-### Sensor Component Diagram
+# Design
+## Sensor Component Diagram
 ![Sensors Diagram](./diagrams/sensors/sensors.drawio.svg)
 In the diagram above, 3 sensors are present, the raindrop sensor, LDR photosensitive sensor and the DHT11 sensor. As it can be seen, they are all connected to the breadboard power rail using their `VCC` and `GND` pins.
 
@@ -57,7 +57,7 @@ The converter is then connected to various pins shown in the diagram to the Rasp
 
 Finally, the breadboard is powered by the Raspberry Pi using its `3v3 Power` and `GND` pins.
 
-### Sequence Diagram
+## Sequence Diagram
 ![Sequence Diagram](./diagrams/communication/communication.svg)
 In the digram above, both the `MQTT Publisher` and `MQTT Subscriber`, which are present in the Raspberry Pi and PC/Laptop respectively, send requests to the MQTT Broker (hosted by the Raspberry Pi) to establish a connection. In case of a failure, the broker sends an error message with an error code to either or both. If successful, the subscriber starts listening for any published data.
 
@@ -65,8 +65,51 @@ Once a connection is established, the sensor reader script starts running and re
 
 The data is then sent to the broker which then sends it to the subscriber. The subscriber sends the data to a database for storage, so that whenever the user decides to use the web application, the data is readily present on load or after refreshing.
 
-## Implementation
-### Sensors
+# Implementation
+## Project Structure
+```bash
+.
+├── project
+│   ├── manage.py
+│   ├── project
+│   │   ├── __init__.py
+│   │   ├── asgi.py
+│   │   ├── settings.py
+│   │   ├── urls.py
+│   │   └── wsgi.py
+│   ├── sensors
+│   │   ├── __init__.py
+│   │   ├── admin.py
+│   │   ├── apps.py
+│   │   ├── management
+│   │   │   ├── __init__.py
+│   │   │   └── commands
+│   │   │       ├── __init__.py
+│   │   │       └── subscribe.py
+│   │   ├── migrations
+│   │   │   ├── 0001_initial.py
+│   │   │   └── __init__.py
+│   │   ├── models.py
+│   │   ├── templates
+│   │   │   └── sensors
+│   │   │       ├── logs.html
+│   │   │       └── sensors.html
+│   │   ├── tests.py
+│   │   ├── urls.py
+│   │   └── views.py
+│   └── templates
+│       └── base.html
+├── requirements.txt
+└── rpi
+    ├── Sensor
+    │   ├── __init__.py
+    │   ├── normalize.py
+    │   └── sensor.py
+    ├── publisher.py
+    └── run.sh
+```
+
+## Sensors
 In order to receive the data from the sensors, the functions in `sensor.py` script in the `rpi/Sensor` submodule are called. These functions utilize the `gpiozero`, `adafruit_dht` and `board` libraries to get the data from the sensors.
 
 The functions for the raindrop and LDR photosensitive sensors use the `MCP3008` method from the `gpiozero` to access the data and a `channel_number` parameter based on the channels on the MCP3008 converter.
@@ -155,8 +198,8 @@ while True:
 Pictured below is the Raspberry Pi sensor setup. A more detailed diagram is present in the previous [section](#sensor-component-diagram) showing the various pin connections between the sensors, the converter and the Raspberry Pi.
 ![Hardware Setup](./images/setup/setup.jpg)
 
-### MQTT
-#### Broker
+## MQTT
+### Broker
 Once the sensor data is acquired, there has to be a method to send the data across the network to other devices. In this case, an MQTT services named `Mosquitto` was used to initialize an MQTT broker, where the Raspberry Pi as its host. This is done by editing the `address` variable to the Raspberry Pi's public ip in the `mosquitto.conf` file in the `/etc/mosquitto/conf.d` directory.
 
 ```bash title="mosquitto.conf"
@@ -170,7 +213,7 @@ acl_file /etc/mosquitto/acls
 
 To run the service, this command was used: `sudo systemctl start mosquitto.service`.
 
-#### Publisher
+### Publisher
 Now that the service is running, there needs to be a publisher that can take the data from the sensors and publishes it in the network. Here the `paho-mqtt` library was used to initialize the Raspberry Pi as a publisher. 
 
 At the very beginning of the `publisher.py` script in the `rpi` directory, the `broker`, `port` and `topic` variables were initialized to match that of the broker and will be used as parameters for the `Client` object to create a connection between the broker and the publisher (client). 
@@ -266,7 +309,7 @@ sent
 
 > NOTE: Due to an error that stops the publisher script after 7 responses, we had to improvise and limit the `publish` function to 5 iterations and then use a `run.sh` bash script that runs the script every 10 seconds to give an illusion of continuity.
 
-#### Subscriber
+### Subscriber
 Although, the `subscriber.py` script does not differ from the `publisher.py` as they both use the same library and the same functions to initalize a client, the `subscriber.py` script, however, uses the `subscribe` function to acquire the published data. In the same function, the data is stored in the database using the Django `SensorData.object.create` function imported from the `models.py` script in the `project/sensors` directory, where the table was made for the data in the database.
 
 ```python title="subscriber.py"
@@ -327,9 +370,9 @@ Data saved: {'rain': 2.344894968246214, 'light': 85.29555446995603, 'humidity': 
 Data saved: {'rain': 1.7586712261846715, 'light': 85.00244259892527, 'humidity': 55, 'temperature': 28}
 ```
 
-### Web Application
+## Web Application
 For the web application, Django was used for its ease of use and batteries-included approach
-#### Frontend
+### Frontend
 There are only three HTML files used in this project: `base.html`, `sensors.html` and `logs.html`.
 
 The `base.html` acts as a template for the other two files and has a navigation bar between the pages. Additionally, the file was used to import the CDN of both `bulma`, which is used for styling, and `chartJS`, which is used to create charts.
